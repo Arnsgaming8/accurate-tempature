@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Temperature</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #00d9ff;
+            --accent-glow: #00d9ff80;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            background-image: 
+                radial-gradient(ellipse at top, #1a1a2e 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, #00d9ff20 0%, transparent 40%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid var(--border);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 60px -20px var(--accent-glow);
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 0.9rem;
+        }
+
+        .temp-display {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .temp-value {
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            text-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .temp-unit {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-left: 8px;
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .location-icon {
+            font-size: 1.1rem;
+        }
+
+        .weather-details {
+            display: grid;
+            gap: 16px;
+        }
+
+        .detail-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .status {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .status.loading {
+            color: var(--text-secondary);
+        }
+
+        .status.error {
+            color: #ff6b6b;
+            border-color: #ff6b6b40;
+        }
+
+        .status.success {
+            color: #4ade80;
+        }
+
+        .refresh-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading .status-text {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Current Temperature</h1>
+            <p class="subtitle">Real-time temperature at your location</p>
+
+            <div class="temp-display">
+                <span class="temp-value" id="tempValue">—</span>
+                <span class="temp-unit" id="tempUnit">°C</span>
+            </div>
+
+            <div class="location-info">
+                <span class="location-icon">📍</span>
+                <span id="locationText">Detecting location...</span>
+            </div>
+
+            <div class="status loading" id="statusBox">
+                <span class="status-text" id="statusText">Fetching weather data...</span>
+            </div>
+
+            <div class="weather-details">
+                <div class="detail-item">
+                    <span class="detail-label">Feels Like</span>
+                    <span class="detail-value" id="feelsLike">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Humidity</span>
+                    <span class="detail-value" id="humidity">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Wind Speed</span>
+                    <span class="detail-value" id="windSpeed">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Conditions</span>
+                    <span class="detail-value" id="conditions">—</span>
+                </div>
+            </div>
+
+            <button class="refresh-btn" id="refreshBtn" onclick="getTemperature()">
+                🔄 Refresh Temperature
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const tempValue = document.getElementById('tempValue');
+        const tempUnit = document.getElementById('tempUnit');
+        const locationText = document.getElementById('locationText');
+        const statusBox = document.getElementById('statusBox');
+        const statusText = document.getElementById('statusText');
+        const feelsLike = document.getElementById('feelsLike');
+        const humidity = document.getElementById('humidity');
+        const windSpeed = document.getElementById('windSpeed');
+        const conditions = document.getElementById('conditions');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        let useFahrenheit = false;
+
+        function setStatus(message, type) {
+            statusBox.className = `status ${type}`;
+            statusText.textContent = message;
+        }
+
+        function toFahrenheit(celsius) {
+            return celsius * 9 / 5 + 32;
+        }
+
+        async function getTemperature() {
+            refreshBtn.disabled = true;
+            setStatus('Detecting your location...', 'loading');
+            
+            if (!navigator.geolocation) {
+                setStatus('Geolocation is not supported by your browser', 'error');
+                refreshBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                setStatus('Fetching weather data...', 'loading');
+                locationText.textContent = `Lat: ${lat.toFixed(2)}°, Lon: ${lon.toFixed(2)}°`;
+
+                // Use Open-Meteo API (free, no API key required)
+                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh`;
+
+                const response = await fetch(weatherUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Weather API request failed');
+                }
+
+                const data = await response.json();
+                const current = data.current;
+
+                const tempC = current.temperature_2m;
+                const feelsLikeC = current.apparent_temperature;
+                const humidityVal = current.relative_humidity_2m;
+                const windVal = current.wind_speed_10m;
+                const weatherCode = current.weather_code;
+
+                // Update temperature display
+                const displayTemp = useFahrenheit ? toFahrenheit(tempC) : tempC;
+                tempValue.textContent = Math.round(displayTemp * 10) / 10;
+                tempUnit.textContent = useFahrenheit ? '°F' : '°C';
+
+                // Update details
+                const displayFeelsLike = useFahrenheit ? toFahrenheit(feelsLikeC) : feelsLikeC;
+                feelsLike.textContent = `${Math.round(displayFeelsLike * 10) / 10}${useFahrenheit ? '°F' : '°C'}`;
+                humidity.textContent = `${humidityVal}%`;
+                windSpeed.textContent = `${Math.round(windVal)} km/h`;
+                conditions.textContent = getWeatherDescription(weatherCode);
+
+                setStatus('Temperature updated successfully', 'success');
+
+                // Auto-refresh every 5 minutes
+                setTimeout(() => {
+                    getTemperature();
+                }, 300000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error.code === 1) {
+                    setStatus('Location access denied. Please enable location services.', 'error');
+                } else if (error.code === 2) {
+                    setStatus('Unable to determine your location.', 'error');
+                } else if (error.code === 3) {
+                    setStatus('Location request timed out. Please try again.', 'error');
+                } else {
+                    setStatus('Failed to fetch weather data. Please try again.', 'error');
+                }
+            }
+
+            refreshBtn.disabled = false;
+        }
+
+        function getWeatherDescription(code) {
+            const weatherCodes = {
+                0: 'Clear sky',
+                1: 'Mainly clear',
+                2: 'Partly cloudy',
+                3: 'Overcast',
+                45: 'Fog',
+                48: 'Depositing rime fog',
+                51: 'Light drizzle',
+                53: 'Moderate drizzle',
+                55: 'Dense drizzle',
+                56: 'Light freezing drizzle',
+                57: 'Dense freezing drizzle',
+                61: 'Slight rain',
+                63: 'Moderate rain',
+                65: 'Heavy rain',
+                66: 'Light freezing rain',
+                67: 'Heavy freezing rain',
+                71: 'Slight snow',
+                73: 'Moderate snow',
+                75: 'Heavy snow',
+                77: 'Snow grains',
+                80: 'Slight rain showers',
+                81: 'Moderate rain showers',
+                82: 'Violent rain showers',
+                85: 'Slight snow showers',
+                86: 'Heavy snow showers',
+                95: 'Thunderstorm',
+                96: 'Thunderstorm with slight hail',
+                99: 'Thunderstorm with heavy hail'
+            };
+            return weatherCodes[code] || 'Unknown';
+        }
+
+        // Toggle unit on click
+        tempValue.addEventListener('click', () => {
+            useFahrenheit = !useFahrenheit;
+            // Re-fetch to update display
+            getTemperature();
+        });
+
+        // Initialize
+        getTemperature();
+    </script>
+</body>
+</html>
