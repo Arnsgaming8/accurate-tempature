@@ -239,6 +239,17 @@
 
         let useFahrenheit = false;
 
+        // Load saved unit preference
+        function loadUnitPreference() {
+            const saved = localStorage.getItem('tempUnit');
+            useFahrenheit = saved === 'fahrenheit';
+        }
+
+        // Save unit preference
+        function saveUnitPreference() {
+            localStorage.setItem('tempUnit', useFahrenheit ? 'fahrenheit' : 'celsius');
+        }
+
         function setStatus(message, type) {
             statusBox.className = `status ${type}`;
             statusText.textContent = message;
@@ -363,11 +374,13 @@
         // Toggle unit on click
         tempValue.addEventListener('click', () => {
             useFahrenheit = !useFahrenheit;
+            saveUnitPreference();
             // Re-fetch to update display
             getTemperature();
         });
 
         // Initialize
+        loadUnitPreference();
         getTemperature();
     </script>
 </body>
